@@ -5,3 +5,8 @@
 - store valid access_tokens
 - validate access_token endpoint
 - remove access_token from valid list
+
+Less important:
+
+- add logging into file
+- clear old logs >> 7 days
