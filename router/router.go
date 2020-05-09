@@ -4,34 +4,45 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/paczulapiotr/goauth2/usecases"
 )
 
-type Response struct {
-	ID   int32  `json:"id"`
-	Type string `json:"itemType"`
+// StatusResp response data type
+type StatusResp struct {
+	Message string `json:"message"`
 }
 
-func Start() {
+// AuthReq auth request data type
+type AuthReq struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
+// AuthResp auth code response data type
+type AuthResp struct {
+	Code string `json:"code"`
+}
+
+// RunRouter runs service routing
+func RunRouter() {
 	router := gin.Default()
 
-	jsonHandler := func(c *gin.Context) {
-		c.JSON(http.StatusBadRequest,
-			Response{100, "Proper JSON item type"})
-	}
-
-	router.GET("/", jsonHandler)
-
-	router.GET("/json", jsonHandler)
-
-	router.GET("/xml", func(c *gin.Context) {
-		c.XML(http.StatusBadRequest,
-			Response{100, "Proper XML item type"})
-	})
-
-	router.GET("/yaml", func(c *gin.Context) {
-		c.YAML(http.StatusBadRequest,
-			Response{100, "Proper YAML item type"})
-	})
+	router.GET("/status", statusHandler)
+	router.POST("/authorize", authorizeHandler)
 
 	router.Run()
+}
+
+func statusHandler(c *gin.Context) {
+	c.JSON(http.StatusOK,
+		StatusResp{"OK"})
+}
+
+func authorizeHandler(c *gin.Context) {
+	var authParams AuthReq
+	c.BindJSON(&authParams)
+
+	code := usecases.LoginForAuthorizationCode(authParams.Login, authParams.Password)
+	resp := AuthResp{code}
+	c.JSON(http.StatusOK, resp)
 }
