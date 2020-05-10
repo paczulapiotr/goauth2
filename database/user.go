@@ -43,37 +43,72 @@ func AddUser(mongo *mongo.Client, login, password string) (string, error) {
 	return id.String(), err
 }
 
-// FindUser returns user with given login
-func FindUser(mongo *mongo.Client, login string) (*models.User, error) {
+// FindUserByLogin returns user with given login
+func FindUserByLogin(mongo *mongo.Client, login string) (*models.User, error) {
+	return findUserWithFilter(mongo, bson.D{{"login", login}})
+}
+
+// FindUserByAuthorizationCode returns user with given code
+func FindUserByAuthorizationCode(mongo *mongo.Client, code string) (*models.User, error) {
+	return findUserWithFilter(mongo, bson.D{
+		{
+			"auth.code", code,
+		},
+	})
+}
+
+func findUserWithFilter(mongo *mongo.Client, filter bson.D) (*models.User, error) {
 	users := getUsersCollections(mongo)
 	ctx := createContext()
 	var userToFind models.User
-	res := *users.FindOne(*ctx, bson.D{{"login", login}})
+	res := *users.FindOne(*ctx, filter)
 	(*ctx).Done()
 	err := res.Decode(&userToFind)
 	return &userToFind, err
 }
 
-// CreateAuthorizationCode Adds authorization code to user
-func CreateAuthorizationCode(mongo *mongo.Client, login string, code string, codeValidUntil time.Time) error {
+// UpdateAuthorizationCode updates authorization code for login
+func UpdateAuthorizationCode(mongo *mongo.Client, login, code string, codeValidUntil time.Time) error {
+	fieldsToUpdate := primitive.D{
+		{"auth.code", code},
+		{"auth.codeValidUntil", codeValidUntil},
+	}
+
+	return updateUser(mongo, login, fieldsToUpdate)
+}
+
+// UpdateAccessToken updates access token for login
+func UpdateAccessToken(mongo *mongo.Client, login, accessToken string, validUntil time.Time) error {
+	fieldsToUpdate := primitive.D{
+		{"auth.accessToken", accessToken},
+		{"auth.validUntil", validUntil},
+	}
+
+	return updateUser(mongo, login, fieldsToUpdate)
+}
+
+// UpdateRefreshToken updates refresh and access token for login
+func UpdateRefreshToken(mongo *mongo.Client, login, refreshToken, accessToken string, refreshValidUntil, validUntil time.Time) error {
+	fieldsToUpdate := primitive.D{
+		{"auth.refreshToken", refreshToken},
+		{"auth.refreshValidUntil", refreshValidUntil},
+		{"auth.accessToken", accessToken},
+		{"auth.validUntil", validUntil},
+	}
+
+	return updateUser(mongo, login, fieldsToUpdate)
+}
+
+func updateUser(mongo *mongo.Client, login string, fields primitive.D) error {
 	users := getUsersCollections(mongo)
 	ctx := createContext()
 
-	auth := models.OAuth2{
-		Code:           code,
-		CodeValidUntil: codeValidUntil,
-		Claims:         []models.Claim{},
-	}
-
 	filter := bson.D{{"login", login}}
-	update := bson.D{
-		{
-			"$set",
-			bson.D{{"auth", auth}},
-		},
-	}
+
+	update := updateBsonWrapper(fields)
 
 	res, err := users.UpdateOne(*ctx, filter, update)
+
 	(*ctx).Done()
 
 	if err != nil {
@@ -81,8 +116,17 @@ func CreateAuthorizationCode(mongo *mongo.Client, login string, code string, cod
 	}
 
 	if res.ModifiedCount != 1 {
-		return fmt.Errorf("Could not add auth code to login: %v", login)
+		return fmt.Errorf("Could not update auth code for login: %v", login)
 	}
 
 	return nil
+}
+
+func updateBsonWrapper(update bson.D) bson.D {
+	return bson.D{
+		{
+			"$set",
+			update,
+		},
+	}
 }

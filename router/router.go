@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/paczulapiotr/goauth2/usecases"
@@ -29,6 +30,19 @@ type AuthResp struct {
 	Code string `json:"code"`
 }
 
+// UseCodeReq use code request data type
+type UseCodeReq struct {
+	Code string `json:"code"`
+}
+
+// UseCodeResp use code response data type
+type UseCodeResp struct {
+	AccessToken       string    `json:"accessToken"`
+	ValidUntil        time.Time `json:"validUntil"`
+	RefreshToken      string    `json:"refreshToken"`
+	RefreshValidUntil time.Time `json:"refreshValidUntil"`
+}
+
 // RunRouter runs service routing
 func RunRouter() {
 	router := gin.Default()
@@ -36,6 +50,7 @@ func RunRouter() {
 	router.GET("/status", statusHandler)
 	router.POST("/authorize", authorizeHandler)
 	router.POST("/register", registerHandler)
+	router.POST("/code", useCodeHandler)
 
 	router.Run()
 	// go runHTTPRedirectRouter("https://localhost:443")
@@ -78,5 +93,28 @@ func registerHandler(c *gin.Context) {
 		c.JSON(http.StatusConflict, err.Error())
 	} else {
 		c.Status(http.StatusOK)
+	}
+}
+
+func useCodeHandler(c *gin.Context) {
+	var requestData UseCodeReq
+	c.BindJSON(&requestData)
+
+	accessToken,
+		validUntil,
+		refreshToken,
+		refreshValidUntil,
+		err := usecases.UseAuthorizationCode(requestData.Code)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+	} else {
+		response := UseCodeResp{
+			AccessToken:       accessToken,
+			ValidUntil:        validUntil,
+			RefreshToken:      refreshToken,
+			RefreshValidUntil: refreshValidUntil,
+		}
+		c.JSON(http.StatusOK, response)
 	}
 }

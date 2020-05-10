@@ -19,6 +19,16 @@ func CreateAuthorizationCode(login string) (authCode string, validUntil time.Tim
 	hash := sha256.Sum256([]byte(hashBase))
 
 	authCode = base64.StdEncoding.EncodeToString(hash[:])
-	validUntil = time.Now().Add(time.Minute * time.Duration(authCodeValidPeriod))
+	validUntil = time.Now().UTC().Add(time.Minute * time.Duration(authCodeValidPeriod))
 	return
+}
+
+// CreateRefreshToken creates refresh token
+func CreateRefreshToken() (refreshToken string, validUntil time.Time, err error) {
+	return "REFRESH_TOKEN", time.Now(), nil
+}
+
+// CreateAccessToken creates access token
+func CreateAccessToken() (accessToken string, validUntil time.Time, err error) {
+	return "ACCESS_TOKEN", time.Now(), nil
 }
