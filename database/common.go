@@ -4,9 +4,17 @@ import (
 	"context"
 	"time"
 
+	"github.com/paczulapiotr/goauth2/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
+
+// DefaultClient returns default mongo client
+func DefaultClient() *mongo.Client {
+	config := config.GetConfiguration()
+	mongo, _ := CreateClient(config.Mongo)
+	return mongo
+}
 
 // CreateClient opens mongodb connection and returns client
 func CreateClient(connectionString string) (*mongo.Client, error) {
@@ -27,8 +35,4 @@ func CreateClient(connectionString string) (*mongo.Client, error) {
 func createContext() *context.Context {
 	ctx, _ := context.WithTimeout(context.Background(), 20*time.Second)
 	return &ctx
-}
-
-func closeConnection(mongo *mongo.Client, ctx *context.Context) error {
-	return mongo.Disconnect(*ctx)
 }

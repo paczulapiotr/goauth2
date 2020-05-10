@@ -20,6 +20,7 @@ func getUsersCollections(mongo *mongo.Client) *mongo.Collection {
 func AddUser(mongo *mongo.Client, login, password string) (string, error) {
 	users := getUsersCollections(mongo)
 	ctx := createContext()
+
 	passwordHash, _ := security.HashPassword(password)
 
 	user := models.User{
@@ -27,13 +28,13 @@ func AddUser(mongo *mongo.Client, login, password string) (string, error) {
 		PasswordHash: passwordHash,
 	}
 	res, err := users.InsertOne(*ctx, user)
-	closeConnection(mongo, ctx)
+	(*ctx).Done()
 
 	if err != nil {
 		return "", err
 	}
 
-	id, ok := res.InsertedID.(*primitive.ObjectID)
+	id, ok := res.InsertedID.(primitive.ObjectID)
 
 	if !ok {
 		return "", fmt.Errorf("Could not add new user: %v", user)
@@ -48,6 +49,7 @@ func FindUser(mongo *mongo.Client, login string) (*models.User, error) {
 	ctx := createContext()
 	var userToFind models.User
 	res := *users.FindOne(*ctx, bson.D{{"login", login}})
+	(*ctx).Done()
 	err := res.Decode(&userToFind)
 	return &userToFind, err
 }
@@ -72,6 +74,7 @@ func CreateAuthorizationCode(mongo *mongo.Client, login string, code string, cod
 	}
 
 	res, err := users.UpdateOne(*ctx, filter, update)
+	(*ctx).Done()
 
 	if err != nil {
 		return err

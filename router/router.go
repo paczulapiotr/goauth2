@@ -18,6 +18,12 @@ type AuthReq struct {
 	Password string `json:"password"`
 }
 
+// RegisterReq register request data type
+type RegisterReq struct {
+	Login    string `json:"login"`
+	Password string `json:"password"`
+}
+
 // AuthResp auth code response data type
 type AuthResp struct {
 	Code string `json:"code"`
@@ -29,6 +35,7 @@ func RunRouter() {
 
 	router.GET("/status", statusHandler)
 	router.POST("/authorize", authorizeHandler)
+	router.POST("/register", registerHandler)
 
 	router.Run()
 	// go runHTTPRedirectRouter("https://localhost:443")
@@ -53,7 +60,23 @@ func authorizeHandler(c *gin.Context) {
 	var authParams AuthReq
 	c.BindJSON(&authParams)
 
-	code := usecases.LoginForAuthorizationCode(authParams.Login, authParams.Password)
-	resp := AuthResp{code}
-	c.JSON(http.StatusOK, resp)
+	code, err := usecases.LoginForAuthorizationCode(authParams.Login, authParams.Password)
+	if err != nil {
+		c.JSON(http.StatusConflict, err.Error())
+	} else {
+		resp := AuthResp{code}
+		c.JSON(http.StatusOK, resp)
+	}
+}
+
+func registerHandler(c *gin.Context) {
+	var registerParams RegisterReq
+	c.BindJSON(&registerParams)
+	err := usecases.RegisterUser(registerParams.Login, registerParams.Password)
+
+	if err != nil {
+		c.JSON(http.StatusConflict, err.Error())
+	} else {
+		c.Status(http.StatusOK)
+	}
 }

@@ -18,3 +18,21 @@ func TestCheckPasswordHash(t *testing.T) {
 		t.Fatal("Hash is not matching password")
 	}
 }
+
+func TestCheckPasswordStructure(t *testing.T) {
+	tooShortPassword := "123"
+	tooLongPassword := "12n0invfds9ovaafdsrngoi"
+	validPassword := "Qwerty!1@"
+
+	if CheckPasswordStructure(tooShortPassword) == nil {
+		t.Fatalf("Should return error for too short password")
+	}
+
+	if CheckPasswordStructure(tooLongPassword) == nil {
+		t.Fatalf("Should return error for too long password")
+	}
+
+	if CheckPasswordStructure(validPassword) != nil {
+		t.Fatalf("Should not return error for valid password")
+	}
+}
