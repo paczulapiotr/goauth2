@@ -1,3 +1,5 @@
 {
-  "Mongo": "mongodb://localhost:27017"
+  "Mongo": "mongodb://localhost:27017",
+  "AccessTokenSecret": "AccessTokenSecret",
+  "RefreshTokenSecret": "RefreshTokenSecret"
 }

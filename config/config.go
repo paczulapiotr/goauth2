@@ -7,7 +7,9 @@ import (
 
 // Configuration has config from config.{env}.json file
 type Configuration struct {
-	Mongo string
+	Mongo              string
+	AccessTokenSecret  string
+	RefreshTokenSecret string
 }
 
 // GetConfiguration returns config from config.{env}.json file

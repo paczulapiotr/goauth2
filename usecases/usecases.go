@@ -91,12 +91,12 @@ func UseAuthorizationCode(code string) (
 
 	// create access_token, refresh_token with claims + validity dates
 
-	refreshToken, refreshValidUntil, err = security.CreateRefreshToken()
+	refreshToken, refreshValidUntil, err = security.CreateRefreshToken(user.Login)
 	if err != nil {
 		return
 
 	}
-	accessToken, validUntil, err = security.CreateAccessToken()
+	accessToken, validUntil, err = security.CreateAccessToken(user.ID.Hex(), user.Login)
 	if err != nil {
 		return
 	}
