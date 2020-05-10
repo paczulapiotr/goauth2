@@ -57,11 +57,9 @@ func CreateAuthorizationCode(mongo *mongo.Client, login string, code string, cod
 	users := getUsersCollections(mongo)
 	ctx := createContext()
 
-	code, validUntil := security.CreateAuthoizationCode(login)
-
 	auth := models.OAuth2{
 		Code:           code,
-		CodeValidUntil: validUntil,
+		CodeValidUntil: codeValidUntil,
 		Claims:         []models.Claim{},
 	}
 

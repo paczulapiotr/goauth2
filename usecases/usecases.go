@@ -26,7 +26,7 @@ func LoginForAuthorizationCode(login, password string) (code string) {
 		panic(errors.New("Invalid credentials"))
 	}
 
-	code, validUntil := security.CreateAuthoizationCode(login)
+	code, validUntil := security.CreateAuthorizationCode(login)
 	err = database.CreateAuthorizationCode(mongo, login, code, validUntil)
 
 	if err != nil {

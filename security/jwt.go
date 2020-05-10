@@ -11,8 +11,8 @@ import (
 
 var authCodeValidPeriod int = 30
 
-// CreateAuthoizationCode creates new auth code based on login
-func CreateAuthoizationCode(login string) (authCode string, validUntil time.Time) {
+// CreateAuthorizationCode creates new auth code based on login
+func CreateAuthorizationCode(login string) (authCode string, validUntil time.Time) {
 	rand.Seed(time.Now().UnixNano())
 	randInteger := rand.Intn(math.MaxInt16)
 	hashBase := login + strconv.Itoa(randInteger)

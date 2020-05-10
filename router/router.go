@@ -31,6 +31,17 @@ func RunRouter() {
 	router.POST("/authorize", authorizeHandler)
 
 	router.Run()
+	// go runHTTPRedirectRouter("https://localhost:443")
+	// router.RunTLS(":443", "cert.pem", "key.pem")
+}
+
+func runHTTPRedirectRouter(urlRedirect string) {
+	httpRouter := gin.Default()
+	httpRouter.GET("/*path", func(c *gin.Context) {
+		path := c.Param("path")
+		c.Redirect(301, urlRedirect+path)
+	})
+	httpRouter.Run(":80")
 }
 
 func statusHandler(c *gin.Context) {

@@ -7,7 +7,7 @@ import (
 
 func TestCreateAuthoizationCode(t *testing.T) {
 	codeBase := "auth code base stringz"
-	code, validUntil := CreateAuthoizationCode(codeBase)
+	code, validUntil := CreateAuthorizationCode(codeBase)
 
 	expectedCodeStringLength := 44
 	actualLength := len(code)
