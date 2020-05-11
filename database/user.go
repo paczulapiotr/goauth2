@@ -57,6 +57,15 @@ func FindUserByAuthorizationCode(mongo *mongo.Client, code string) (*models.User
 	})
 }
 
+// FindUserByRefreshToken returns user with given refresh token
+func FindUserByRefreshToken(mongo *mongo.Client, refreshToken string) (*models.User, error) {
+	return findUserWithFilter(mongo, bson.D{
+		{
+			"auth.refreshToken", refreshToken,
+		},
+	})
+}
+
 func findUserWithFilter(mongo *mongo.Client, filter bson.D) (*models.User, error) {
 	users := getUsersCollections(mongo)
 	ctx := createContext()
@@ -97,6 +106,11 @@ func UpdateRefreshToken(mongo *mongo.Client, login, refreshToken, accessToken st
 	}
 
 	return updateUser(mongo, login, fieldsToUpdate)
+}
+
+// RevokeRefreshToken revokes refresh and access token for login
+func RevokeRefreshToken(mongo *mongo.Client, login string) error {
+	return UpdateRefreshToken(mongo, login, "", "", time.Time{}, time.Time{})
 }
 
 func updateUser(mongo *mongo.Client, login string, fields primitive.D) error {

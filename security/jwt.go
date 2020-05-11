@@ -3,17 +3,16 @@ package security
 import (
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"math"
 	"math/rand"
 	"strconv"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/paczulapiotr/goauth2/config"
 )
 
 var authCodeValidPeriod int = 30
-var cfg = config.GetConfiguration()
 var refreshTokenExpirationDuration = time.Hour * 24 * 7
 var accessTokenExpirationDuration = time.Minute * 60
 
@@ -25,14 +24,14 @@ func CreateAuthorizationCode(login string) (authCode string, validUntil time.Tim
 }
 
 // CreateRefreshToken creates refresh token
-func CreateRefreshToken(login string) (refreshToken string, validUntil time.Time, err error) {
-	refreshToken = createRandomSha256(login + cfg.RefreshTokenSecret)
+func CreateRefreshToken(login, secret string) (refreshToken string, validUntil time.Time, err error) {
+	refreshToken = createRandomSha256(login + secret)
 	validUntil = time.Now().UTC().Add(refreshTokenExpirationDuration)
 	return
 }
 
 // CreateAccessToken creates access token
-func CreateAccessToken(userID, login string) (accessToken string, validUntil time.Time, err error) {
+func CreateAccessToken(userID, login, secret string) (accessToken string, validUntil time.Time, err error) {
 	now := time.Now().UTC()
 	validUntil = now.Add(accessTokenExpirationDuration)
 
@@ -45,10 +44,26 @@ func CreateAccessToken(userID, login string) (accessToken string, validUntil tim
 		IssuedAt:  now.Unix(),
 		Audience:  "all",
 	})
-	secret := []byte(cfg.AccessTokenSecret)
-	accessToken, err = jwtToken.SignedString(secret)
+	secretKey := []byte(secret)
+	accessToken, err = jwtToken.SignedString(secretKey)
 
 	return
+}
+
+// CheckAccessToken checks if access token is valid with given secret
+func CheckAccessToken(accessToken, secret string) error {
+	jwt, err := jwt.Parse(accessToken,
+		func(tkn *jwt.Token) (interface{}, error) { return []byte(secret), nil })
+
+	if err != nil {
+		return err
+	}
+
+	if !jwt.Valid {
+		return errors.New("JWT token is not valid")
+	}
+
+	return nil
 }
 
 func createRandomSha256(key string) string {

@@ -2,46 +2,10 @@ package router
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/paczulapiotr/goauth2/usecases"
 )
-
-// StatusResp response data type
-type StatusResp struct {
-	Message string `json:"message"`
-}
-
-// AuthReq auth request data type
-type AuthReq struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-}
-
-// RegisterReq register request data type
-type RegisterReq struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-}
-
-// AuthResp auth code response data type
-type AuthResp struct {
-	Code string `json:"code"`
-}
-
-// UseCodeReq use code request data type
-type UseCodeReq struct {
-	Code string `json:"code"`
-}
-
-// UseCodeResp use code response data type
-type UseCodeResp struct {
-	AccessToken       string    `json:"accessToken"`
-	ValidUntil        time.Time `json:"validUntil"`
-	RefreshToken      string    `json:"refreshToken"`
-	RefreshValidUntil time.Time `json:"refreshValidUntil"`
-}
 
 // RunRouter runs service routing
 func RunRouter() {
@@ -51,6 +15,9 @@ func RunRouter() {
 	router.POST("/authorize", authorizeHandler)
 	router.POST("/register", registerHandler)
 	router.POST("/code", useCodeHandler)
+	router.POST("/revoke", revokeHandler)
+	router.POST("/refresh", refreshHandler)
+	router.POST("/check", checkTokenHandler)
 
 	router.Run()
 	// go runHTTPRedirectRouter("https://localhost:443")
@@ -64,6 +31,46 @@ func runHTTPRedirectRouter(urlRedirect string) {
 		c.Redirect(301, urlRedirect+path)
 	})
 	httpRouter.Run(":80")
+}
+
+func checkTokenHandler(c *gin.Context) {
+	var payload CheckAccessTokenReq
+	c.BindJSON(&payload)
+
+	err := usecases.CheckAccessToken(payload.AccessToken)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+	} else {
+		c.Status(http.StatusOK)
+	}
+}
+
+func revokeHandler(c *gin.Context) {
+	var payload RefreshTokenReq
+	c.BindJSON(&payload)
+
+	err := usecases.RevokeRefreshToken(payload.RefreshToken)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+	} else {
+		c.Status(http.StatusOK)
+	}
+}
+
+func refreshHandler(c *gin.Context) {
+	var payload RefreshTokenReq
+	c.BindJSON(&payload)
+
+	accessToken, err := usecases.RefreshAccessToken(payload.RefreshToken)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, err.Error())
+	} else {
+		response := RefreshAccessTokenResp{accessToken}
+		c.JSON(http.StatusOK, response)
+	}
 }
 
 func statusHandler(c *gin.Context) {

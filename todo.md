@@ -1,12 +1,3 @@
-- store users (login/pass)
-- get auth code endpoint (login/pass later on)
-- store access_codes
-- exchange code for access_token
-- store valid access_tokens
-- validate access_token endpoint
-- remove access_token from valid list
-
-Less important:
-
 - add logging into file
 - clear old logs >> 7 days
+- add informative errors

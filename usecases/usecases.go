@@ -5,9 +5,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/paczulapiotr/goauth2/config"
 	"github.com/paczulapiotr/goauth2/database"
 	"github.com/paczulapiotr/goauth2/security"
 )
+
+var cfg = config.GetConfiguration()
 
 // LoginForAuthorizationCode Returns auth code for given credentials
 func LoginForAuthorizationCode(login, password string) (code string, err error) {
@@ -91,12 +94,12 @@ func UseAuthorizationCode(code string) (
 
 	// create access_token, refresh_token with claims + validity dates
 
-	refreshToken, refreshValidUntil, err = security.CreateRefreshToken(user.Login)
+	refreshToken, refreshValidUntil, err = security.CreateRefreshToken(user.Login, cfg.RefreshTokenSecret)
 	if err != nil {
 		return
 
 	}
-	accessToken, validUntil, err = security.CreateAccessToken(user.ID.Hex(), user.Login)
+	accessToken, validUntil, err = security.CreateAccessToken(user.ID.Hex(), user.Login, cfg.AccessTokenSecret)
 	if err != nil {
 		return
 	}
@@ -106,4 +109,41 @@ func UseAuthorizationCode(code string) (
 
 	// return access_token, refresh_token
 	return
+}
+
+// RevokeRefreshToken revokes refresh token and corresponding access token
+func RevokeRefreshToken(refreshToken string) (err error) {
+
+	mongo := database.DefaultClient()
+	user, err := database.FindUserByRefreshToken(mongo, refreshToken)
+	if err != nil {
+		return
+	}
+
+	err = database.RevokeRefreshToken(mongo, user.Login)
+
+	return
+}
+
+// RefreshAccessToken refreshes access token
+func RefreshAccessToken(refreshToken string) (accessToken string, err error) {
+	mongo := database.DefaultClient()
+	user, err := database.FindUserByRefreshToken(mongo, refreshToken)
+	if err != nil {
+		return
+	}
+
+	accessToken, validUntil, err := security.CreateAccessToken(user.ID.Hex(), user.Login, cfg.AccessTokenSecret)
+	if err != nil {
+		return
+	}
+
+	err = database.UpdateAccessToken(mongo, user.Login, accessToken, validUntil)
+
+	return
+}
+
+// CheckAccessToken checks if access token is valid
+func CheckAccessToken(accessToken string) error {
+	return security.CheckAccessToken(accessToken, cfg.AccessTokenSecret)
 }
